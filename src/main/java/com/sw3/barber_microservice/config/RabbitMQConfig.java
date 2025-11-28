@@ -18,6 +18,8 @@ public class RabbitMQConfig {
     // 1. LO QUE PUBLICAMOS (Nuestro Exchange propio)
     public static final String BARBER_EXCHANGE = "barber.exchange";
 
+    public static final String WORKSHIFT_EXCHANGE = "workshift.exchange";
+
     // 2. LO QUE ESCUCHAMOS (Exchange del otro microservicio)
     public static final String SERVICE_EXCHANGE = "service.exchange"; // Debe coincidir EXACTAMENTE con el otro MS
 
@@ -45,6 +47,10 @@ public class RabbitMQConfig {
     @Bean
     public TopicExchange barberExchange() {
         return new TopicExchange(BARBER_EXCHANGE);
+    }
+    @Bean
+    public TopicExchange workshiftExchange() {
+        return new TopicExchange(WORKSHIFT_EXCHANGE);
     }
 
     // -------------------------------------------------------------------

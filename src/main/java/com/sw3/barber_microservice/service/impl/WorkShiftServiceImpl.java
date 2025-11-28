@@ -1,6 +1,8 @@
 package com.sw3.barber_microservice.service.impl;
 
 import com.sw3.barber_microservice.dto.WorkShiftDTO;
+import com.sw3.barber_microservice.messaging.BarberEventPublisher;
+import com.sw3.barber_microservice.messaging.WorkShiftEventPublisher;
 import com.sw3.barber_microservice.model.Barber;
 import com.sw3.barber_microservice.model.DayOfWeekEnum;
 import com.sw3.barber_microservice.model.WorkShift;
@@ -25,11 +27,15 @@ public class WorkShiftServiceImpl implements WorkShiftService {
     private final BarberRepository barberRepository;
     @Autowired
     private final ModelMapper modelMapper;
+    @Autowired
+    private final WorkShiftEventPublisher workShiftEventPublisher;
 
-    public WorkShiftServiceImpl(WorkShiftRepository workShiftRepository, BarberRepository barberRepository, ModelMapper modelMapper) {
+
+    public WorkShiftServiceImpl(WorkShiftRepository workShiftRepository, BarberRepository barberRepository, ModelMapper modelMapper, WorkShiftEventPublisher workShiftEventPublisher) {
         this.workShiftRepository = workShiftRepository;
         this.barberRepository = barberRepository;
         this.modelMapper = modelMapper;
+        this.workShiftEventPublisher = workShiftEventPublisher;
     }
 
     @Override
@@ -88,6 +94,7 @@ public class WorkShiftServiceImpl implements WorkShiftService {
         WorkShift saved = workShiftRepository.save(ws);
         WorkShiftDTO out = modelMapper.map(saved, WorkShiftDTO.class);
         out.setBarberId(saved.getBarber() != null ? saved.getBarber().getId() : null);
+        workShiftEventPublisher.publishWorkShiftCreated(out);
         return out;
     }
 
