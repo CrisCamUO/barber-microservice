@@ -14,9 +14,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
 
 @Entity
 @Table(name = "barbers")
+@Data
 public class Barber {
 
     @Id
@@ -47,83 +49,4 @@ public class Barber {
 
     public Barber() {}
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public Boolean isAvailability() {
-        return availability;
-    }
-
-    public void setAvailability(Boolean availability) {
-        this.availability = availability;
-    }
-
-    public Boolean isContract() {
-        return contract;
-    }
-
-    public void setContract(Boolean contract) {
-        this.contract = contract;
-    }
-
-    public List<WorkShift> getWorkShifts() {
-        return workShifts;
-    }
-
-    public void setWorkShifts(List<WorkShift> workShifts) {
-        this.workShifts = workShifts;
-    }
-
-    public List<BarberService> getBarberServices() {
-        return barberServices;
-    }
-
-    public void setBarberServices(List<BarberService> barberServices) {
-        this.barberServices = barberServices;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
 }

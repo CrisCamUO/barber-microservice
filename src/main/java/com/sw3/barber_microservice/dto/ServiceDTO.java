@@ -1,28 +1,14 @@
 package com.sw3.barber_microservice.dto;
-
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.util.List;
+@Data
+@NoArgsConstructor
 public class ServiceDTO {
 
     private Long id;
 
     private String name;
 
-
-    public ServiceDTO() {}
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
+    private List<Long> barberIds;
 }
