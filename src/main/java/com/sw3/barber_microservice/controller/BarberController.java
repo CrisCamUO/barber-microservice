@@ -11,6 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 @RestController
 @RequestMapping("/api/barbers")
@@ -63,7 +66,13 @@ public class BarberController {
         barberService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
-
+    @PostMapping("/{id}/service/{id}")
+    public String postMethodName(@RequestBody String entity) {
+        
+        
+        return entity;
+    }
+    
 
     //Asociar  servicios a un barbero
     

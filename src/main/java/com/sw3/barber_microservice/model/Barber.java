@@ -8,8 +8,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.CascadeType;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
@@ -38,14 +38,21 @@ public class Barber {
     @OneToMany(mappedBy = "barber", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<WorkShift> workShifts = new ArrayList<>();
 
-    @OneToMany(mappedBy = "barber", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<BarberService> barberServices = new ArrayList<>();
+    @ManyToMany
+    @JoinTable(
+        name = "barber_service",
+        joinColumns = @JoinColumn(name = "barber_id"),
+        inverseJoinColumns = @JoinColumn(name = "service_id")
+    )
+    private List<Service> services = new ArrayList<>();
 
     @Column(columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean availability;
 
     @Column(columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean contract;
+
+    // Relationship Barber <-> Service modelled as ManyToMany with join table `barber_service`.
 
     public Barber() {}
 

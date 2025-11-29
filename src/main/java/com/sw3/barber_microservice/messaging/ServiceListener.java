@@ -3,7 +3,6 @@ package com.sw3.barber_microservice.messaging;
 import com.sw3.barber_microservice.config.RabbitMQConfig;
 import com.sw3.barber_microservice.dto.event.ServiceEventDTO;
 import com.sw3.barber_microservice.model.Barber;
-import com.sw3.barber_microservice.model.BarberService;
 import com.sw3.barber_microservice.model.Service;
 import com.sw3.barber_microservice.repository.BarberRepository;
 import com.sw3.barber_microservice.repository.ServiceRepository;
@@ -46,18 +45,11 @@ public class ServiceListener {
                 // Estrategia: Limpiar y re-asignar. 
                 // Como 'cascade = CascadeType.ALL' y 'orphanRemoval = true' (asumido/recomendado), 
                 // limpiar la lista borra las filas en barber_services.
-                serviceLocal.getBarberServices().clear();
+                // switch to ManyToMany: clear set of barbers and add found barbers
+                serviceLocal.getBarbers().clear();
 
                 List<Barber> barbers = barberRepository.findAllById(event.getBarberIds());
-
-                for (Barber barber : barbers) {
-                    BarberService relation = new BarberService();
-                    relation.setService(serviceLocal);
-                    relation.setBarber(barber);
-                    // Aquí podrías setear otros atributos de la relación si los hubiera
-                    
-                    serviceLocal.getBarberServices().add(relation);
-                }
+                serviceLocal.getBarbers().addAll(barbers);
             }
 
             // 3. Guardar (Upsert)

@@ -20,8 +20,8 @@ public class Service {
     @Column(columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean active = true;
 
-    @OneToMany(mappedBy = "service", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<BarberService> barberServices = new ArrayList<>();
+    @ManyToMany(mappedBy = "services", fetch = FetchType.LAZY)
+    private List<Barber> barbers = new ArrayList<>();
 
     public Service() {}
 }

@@ -75,10 +75,10 @@ public class BarberServiceImpl implements BarberService {
         // 4. Extracción de IDs de Servicios para sincronización
         // Obtenemos la lista de servicios asociados para enviarla al otro MS
         List<Long> serviceIds = new ArrayList<>();
-        if (saved.getBarberServices() != null) {
-            serviceIds = saved.getBarberServices().stream()
-                    .map(bs -> bs.getService().getId())
-                    .collect(Collectors.toList());
+        if (saved.getServices() != null) {
+            serviceIds = saved.getServices().stream()
+                .map(svc -> svc.getId())
+                .collect(Collectors.toList());
         }
 
         BarberDTO savedDto = modelMapper.map(saved, BarberDTO.class);
