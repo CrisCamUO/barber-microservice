@@ -17,14 +17,15 @@ public class RabbitMQConfig {
     
     // 1. LO QUE PUBLICAMOS (Nuestro Exchange propio)
     public static final String BARBER_EXCHANGE = "barber.exchange";
-
     public static final String WORKSHIFT_EXCHANGE = "workshift.exchange";
 
     // 2. LO QUE ESCUCHAMOS (Exchange del otro microservicio)
     public static final String SERVICE_EXCHANGE = "service.exchange"; // Debe coincidir EXACTAMENTE con el otro MS
+    public static final String SERVICE_ASSIGNED_EXCHANGE = "service.assigned.exchange";
 
     // 3. NUESTRA COLA (El buzón donde llegarán los avisos de servicios)
     public static final String SERVICE_LISTENER_QUEUE = "barber.service.listener.queue";
+    public static final String SERVICE_ASSIGNED_LISTENER_QUEUE = "barber.service.assigned.listener.queue";
 
     // -------------------------------------------------------------------
     // CONVERTIDOR JSON (Obligatorio)
@@ -70,5 +71,21 @@ public class RabbitMQConfig {
     public Binding bindingServiceEvents(Queue serviceListenerQueue, TopicExchange serviceExchange) {
         // Escuchamos todo lo que venga de servicios (created, updated, inactivated)
         return BindingBuilder.bind(serviceListenerQueue).to(serviceExchange).with("service.#");
+    }
+    
+    @Bean
+    public Queue serviceAssignedListenerQueue() {
+        return new Queue(SERVICE_ASSIGNED_LISTENER_QUEUE, true);
+    }
+
+    @Bean
+    public TopicExchange serviceAssignedExchange() {
+        return new TopicExchange(SERVICE_ASSIGNED_EXCHANGE);
+    }
+
+    @Bean
+    public Binding bindingServiceAssignedEvents(Queue serviceAssignedListenerQueue, TopicExchange serviceAssignedExchange) {
+        // Escuchamos todo lo que venga de servicios asignados
+        return BindingBuilder.bind(serviceAssignedListenerQueue).to(serviceAssignedExchange).with("service.assigned.#");
     }
 }

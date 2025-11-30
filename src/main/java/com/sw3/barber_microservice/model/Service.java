@@ -12,7 +12,7 @@ public class Service {
 
     @Id
     // El ID debe ser idéntico al del Microservicio de Servicios (Réplica Manual).
-    private Long id;
+    private String id;
 
     private String name;
 

@@ -1,7 +1,6 @@
 package com.sw3.barber_microservice.service.impl;
 
 import com.sw3.barber_microservice.dto.WorkShiftDTO;
-import com.sw3.barber_microservice.messaging.BarberEventPublisher;
 import com.sw3.barber_microservice.messaging.WorkShiftEventPublisher;
 import com.sw3.barber_microservice.model.Barber;
 import com.sw3.barber_microservice.model.DayOfWeekEnum;

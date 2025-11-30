@@ -13,6 +13,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -42,14 +46,48 @@ public class ServiceListener {
             // 2. SINCRONIZACIÓN DE RELACIONES (BarberServices)
             // Si el evento trae la lista de barberos autorizados, actualizamos nuestra tabla intermedia
             if (event.getBarberIds() != null) {
-                // Estrategia: Limpiar y re-asignar. 
-                // Como 'cascade = CascadeType.ALL' y 'orphanRemoval = true' (asumido/recomendado), 
-                // limpiar la lista borra las filas en barber_services.
-                // switch to ManyToMany: clear set of barbers and add found barbers
-                serviceLocal.getBarbers().clear();
+                // Estrategia idempotente: calcular diffs entre los barberos actuales y los entrantes
+                Set<Long> incoming = event.getBarberIds().stream().filter(Objects::nonNull).collect(Collectors.toSet());
 
-                List<Barber> barbers = barberRepository.findAllById(event.getBarberIds());
-                serviceLocal.getBarbers().addAll(barbers);
+                // IDs actuales asociados al servicio
+                Set<Long> current = serviceLocal.getBarbers().stream()
+                        .map(Barber::getId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+
+                Set<Long> toAdd = incoming.stream().filter(id -> !current.contains(id)).collect(Collectors.toSet());
+                Set<Long> toRemove = current.stream().filter(id -> !incoming.contains(id)).collect(Collectors.toSet());
+
+                // Añadir: traer barberos que faltan y vincular bidireccionalmente
+                if (!toAdd.isEmpty()) {
+                    List<Barber> barbersToAdd = barberRepository.findAllById(toAdd);
+                    // advertencia si faltan IDs
+                    if (barbersToAdd.size() != toAdd.size()) {
+                        Set<Long> found = barbersToAdd.stream().map(Barber::getId).collect(Collectors.toSet());
+                        Set<Long> missing = toAdd.stream().filter(id -> !found.contains(id)).collect(Collectors.toSet());
+                        log.warn("Algunos barberos para agregar no existen localmente: {}", missing);
+                    }
+                    for (Barber b : barbersToAdd) {
+                        // asegurar relación inversa
+                        if (serviceLocal.getBarbers().stream().noneMatch(sb -> Objects.equals(sb.getId(), b.getId()))) {
+                            serviceLocal.getBarbers().add(b);
+                        }
+                        if (b.getServices().stream().noneMatch(s -> Objects.equals(s.getId(), serviceLocal.getId()))) {
+                            b.getServices().add(serviceLocal);
+                        }
+                    }
+                    barberRepository.saveAll(barbersToAdd);
+                }
+
+                // Remover: quitar relación en barberos que ya no están
+                if (!toRemove.isEmpty()) {
+                    List<Barber> barbersToRemove = barberRepository.findAllById(toRemove);
+                    for (Barber b : barbersToRemove) {
+                        b.getServices().removeIf(s -> Objects.equals(s.getId(), serviceLocal.getId()));
+                        serviceLocal.getBarbers().removeIf(bb -> Objects.equals(bb.getId(), b.getId()));
+                    }
+                    barberRepository.saveAll(barbersToRemove);
+                }
             }
 
             // 3. Guardar (Upsert)

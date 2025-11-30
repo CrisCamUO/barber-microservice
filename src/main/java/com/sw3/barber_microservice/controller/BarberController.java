@@ -2,6 +2,7 @@ package com.sw3.barber_microservice.controller;
 
 import com.sw3.barber_microservice.dto.BarberDTO;
 import com.sw3.barber_microservice.service.BarberService;
+import com.sw3.barber_microservice.service.ServiceService;
 
 import jakarta.validation.Valid;
 
@@ -10,7 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.util.List;
+import com.sw3.barber_microservice.dto.ServiceDTO;
+import com.sw3.barber_microservice.dto.AssignServicesDTO;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -21,8 +25,12 @@ public class BarberController {
     @Autowired
     private final BarberService barberService;
 
-    public BarberController(BarberService barberService) {
+    @Autowired
+    private final ServiceService serviceService;
+
+    public BarberController(BarberService barberService, ServiceService serviceService) {
         this.barberService = barberService;
+        this.serviceService = serviceService;
     }
 
     @GetMapping
@@ -66,14 +74,34 @@ public class BarberController {
         barberService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
-    @PostMapping("/{id}/service/{id}")
-    public String postMethodName(@RequestBody String entity) {
-        
-        
-        return entity;
+    @PostMapping("/{barberId}/services/{serviceId}")
+    public ResponseEntity<ServiceDTO> assignService(@PathVariable Long barberId, @PathVariable Long serviceId) {
+        ServiceDTO dto = barberService.assignServiceToBarber(barberId, serviceId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
-    
 
-    //Asociar  servicios a un barbero
+    @DeleteMapping("/{barberId}/services/{serviceId}")
+    public ResponseEntity<Void> unassignService(@PathVariable Long barberId, @PathVariable Long serviceId) {
+        barberService.unassignServiceFromBarber(barberId, serviceId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{barberId}/services")
+    public ResponseEntity<List<ServiceDTO>> listServicesByBarber(@PathVariable Long barberId) {
+        List<ServiceDTO> services = barberService.getServicesByBarber(barberId);
+        return ResponseEntity.ok(services);
+    }
+
+    @PostMapping("/{barberId}/services/bulk")
+    public ResponseEntity<List<ServiceDTO>> assignServicesBulk(@PathVariable Long barberId, @RequestBody AssignServicesDTO dto) {
+        List<ServiceDTO> assigned = barberService.assignServicesToBarber(barberId, dto.getServiceIds());
+        return ResponseEntity.status(HttpStatus.CREATED).body(assigned);
+    }
+
+    @GetMapping("/services")
+    public ResponseEntity<List<ServiceDTO>> getServices() {
+        List<ServiceDTO> services = serviceService.findAll();
+        return ResponseEntity.ok(services);
+    }
     
 }

@@ -3,31 +3,36 @@ package com.sw3.barber_microservice.service.impl;
 import com.sw3.barber_microservice.dto.BarberDTO;
 import com.sw3.barber_microservice.messaging.BarberEventPublisher;
 import com.sw3.barber_microservice.model.Barber;
+import com.sw3.barber_microservice.model.Service;
+import com.sw3.barber_microservice.dto.ServiceDTO;
 import com.sw3.barber_microservice.service.BarberService;
-//import com.sw3.barber_microservice.model.BarberService;
 import com.sw3.barber_microservice.repository.BarberRepository;
+import com.sw3.barber_microservice.repository.ServiceRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
+@org.springframework.stereotype.Service
 public class BarberServiceImpl implements BarberService {
 
     @Autowired
     private final BarberRepository barberRepository;
     @Autowired
+    private final ServiceRepository serviceRepository;
+    @Autowired
     private final ModelMapper modelMapper;
     @Autowired
     private final BarberEventPublisher barberEventPublisher;
 
-    public BarberServiceImpl(BarberRepository barberRepository, ModelMapper modelMapper, BarberEventPublisher barberEventPublisher) {
+    public BarberServiceImpl(BarberRepository barberRepository, ServiceRepository serviceRepository, ModelMapper modelMapper, BarberEventPublisher barberEventPublisher) {
         this.barberRepository = barberRepository;
+        this.serviceRepository = serviceRepository;
         this.modelMapper = modelMapper;
         this.barberEventPublisher = barberEventPublisher;
     }
@@ -91,6 +96,65 @@ public class BarberServiceImpl implements BarberService {
         }
         
         return savedDto;
+    }
+
+    @Override
+    @Transactional
+    public ServiceDTO assignServiceToBarber(Long barberId, Long serviceId) {
+        Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
+        Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new IllegalArgumentException("Service not found"));
+
+        if (!barber.getServices().contains(service)) {
+            barber.getServices().add(service);
+        }
+        if (!service.getBarbers().contains(barber)) {
+            service.getBarbers().add(barber);
+        }
+
+        barberRepository.save(barber);
+
+        return modelMapper.map(service, ServiceDTO.class);
+    }
+
+    @Override
+    @Transactional
+    public void unassignServiceFromBarber(Long barberId, Long serviceId) {
+        Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
+        Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new IllegalArgumentException("Service not found"));
+
+        barber.getServices().remove(service);
+        service.getBarbers().remove(barber);
+
+        barberRepository.save(barber);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ServiceDTO> getServicesByBarber(Long barberId) {
+        Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
+        return barber.getServices().stream().map(s -> modelMapper.map(s, ServiceDTO.class)).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public List<ServiceDTO> assignServicesToBarber(Long barberId, List<Long> serviceIds) {
+        Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
+
+        List<Service> services = serviceRepository.findAllById(serviceIds);
+
+        // add each service if not present and sync inverse
+        for (Service svc : services) {
+            if (!barber.getServices().contains(svc)) {
+                barber.getServices().add(svc);
+            }
+            if (!svc.getBarbers().contains(barber)) {
+                svc.getBarbers().add(barber);
+            }
+        }
+
+        barberRepository.save(barber);
+
+        return services.stream().map(s -> modelMapper.map(s, ServiceDTO.class)).collect(Collectors.toList());
     }
 
     @Override

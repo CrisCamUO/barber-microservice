@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class BarberDTO {
     
-    private Long id;
+    private String id;
     @NotNull
     private String name;
     @NotNull
