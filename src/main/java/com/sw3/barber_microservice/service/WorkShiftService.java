@@ -7,8 +7,8 @@ import java.util.Optional;
 
 public interface WorkShiftService {
     List<WorkShiftDTO> findAll();
-    Optional<WorkShiftDTO> findById(Long id);
+    Optional<WorkShiftDTO> findById(String id);
     WorkShiftDTO save(WorkShiftDTO workShiftDto);
-    List<WorkShiftDTO> findByBarberId(Long barberId);
-    void deleteById(Long id);
+    List<WorkShiftDTO> findByBarberId(String barberId);
+    void deleteById(String id);
 }

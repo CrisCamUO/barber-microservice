@@ -47,7 +47,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<BarberDTO> findById(Long id) {
+    public Optional<BarberDTO> findById(String id) {
         return barberRepository.findById(id).map(b -> modelMapper.map(b, BarberDTO.class));
     }
 
@@ -79,7 +79,7 @@ public class BarberServiceImpl implements BarberService {
 
         // 4. Extracción de IDs de Servicios para sincronización
         // Obtenemos la lista de servicios asociados para enviarla al otro MS
-        List<Long> serviceIds = new ArrayList<>();
+        List<String> serviceIds = new ArrayList<>();
         if (saved.getServices() != null) {
             serviceIds = saved.getServices().stream()
                 .map(svc -> svc.getId())
@@ -100,7 +100,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public ServiceDTO assignServiceToBarber(Long barberId, Long serviceId) {
+    public ServiceDTO assignServiceToBarber(String barberId, String serviceId) {
         Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
         Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new IllegalArgumentException("Service not found"));
 
@@ -118,7 +118,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void unassignServiceFromBarber(Long barberId, Long serviceId) {
+    public void unassignServiceFromBarber(String barberId, String serviceId) {
         Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
         Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new IllegalArgumentException("Service not found"));
 
@@ -130,14 +130,14 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ServiceDTO> getServicesByBarber(Long barberId) {
+    public List<ServiceDTO> getServicesByBarber(String barberId) {
         Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
         return barber.getServices().stream().map(s -> modelMapper.map(s, ServiceDTO.class)).collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public List<ServiceDTO> assignServicesToBarber(Long barberId, List<Long> serviceIds) {
+    public List<ServiceDTO> assignServicesToBarber(String barberId, List<String> serviceIds) {
         Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
 
         List<Service> services = serviceRepository.findAllById(serviceIds);
@@ -159,7 +159,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void deleteById(Long id) {
+    public void deleteById(String id) {
         // 1. Avisar al otro microservicio primero (para que limpie sus referencias)
         barberEventPublisher.publishBarberInactivated(id);
 

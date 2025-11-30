@@ -30,8 +30,8 @@ public class ServiceAssignedListener {
                 event.getServiceId(), event.getBarberIds() != null ? event.getBarberIds().size() : 0);
 
         try {
-            Long serviceId = event.getServiceId();
-            List<Long> incomingBarberIds = event.getBarberIds() != null ? event.getBarberIds() : Collections.emptyList();
+            String serviceId = event.getServiceId();
+            List<String> incomingBarberIds = event.getBarberIds() != null ? event.getBarberIds() : Collections.emptyList();
 
             // 1) Obtener o crear servicio local (réplica)
             Service serviceLocal = serviceRepository.findById(serviceId).orElseGet(() -> {
@@ -42,19 +42,19 @@ public class ServiceAssignedListener {
             });
 
             // 2) Determinar barberos actuales asociados al servicio
-            Set<Long> currentBarberIds = serviceLocal.getBarbers().stream()
+            Set<String> currentBarberIds = serviceLocal.getBarbers().stream()
                     .map(Barber::getId)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
 
-            Set<Long> incomingSet = new HashSet<>(incomingBarberIds);
+            Set<String> incomingSet = new HashSet<>(incomingBarberIds);
 
             // 3) Barberos a agregar y a remover
-            Set<Long> toAdd = incomingSet.stream()
+            Set<String> toAdd = incomingSet.stream()
                     .filter(id -> !currentBarberIds.contains(id))
                     .collect(Collectors.toSet());
 
-            Set<Long> toRemove = currentBarberIds.stream()
+            Set<String> toRemove = currentBarberIds.stream()
                     .filter(id -> !incomingSet.contains(id))
                     .collect(Collectors.toSet());
 
@@ -65,8 +65,8 @@ public class ServiceAssignedListener {
                 List<Barber> barbersToAdd = barberRepository.findAllById(new ArrayList<>(toAdd));
                 if (barbersToAdd.size() != toAdd.size()) {
                     // Algunos IDs no existen localmente; registrar advertencia
-                    Set<Long> found = barbersToAdd.stream().map(Barber::getId).collect(Collectors.toSet());
-                    Set<Long> missing = toAdd.stream().filter(id -> !found.contains(id)).collect(Collectors.toSet());
+                    Set<String> found = barbersToAdd.stream().map(Barber::getId).collect(Collectors.toSet());
+                    Set<String> missing = toAdd.stream().filter(id -> !found.contains(id)).collect(Collectors.toSet());
                     log.warn("Algunos barberos a asignar no existen localmente: {}", missing);
                 }
 

@@ -8,15 +8,15 @@ import java.util.Optional;
 
 public interface BarberService {
     List<BarberDTO> findAll();
-    Optional<BarberDTO> findById(Long id);
+    Optional<BarberDTO> findById(String id);
     BarberDTO save(BarberDTO barberDto);
-    void deleteById(Long id);
+    void deleteById(String id);
 
     // Associations
-    ServiceDTO assignServiceToBarber(Long barberId, Long serviceId);
-    void unassignServiceFromBarber(Long barberId, Long serviceId);
-    List<ServiceDTO> getServicesByBarber(Long barberId);
+    ServiceDTO assignServiceToBarber(String barberId, String serviceId);
+    void unassignServiceFromBarber(String barberId, String serviceId);
+    List<ServiceDTO> getServicesByBarber(String barberId);
 
     // Bulk assign
-    List<ServiceDTO> assignServicesToBarber(Long barberId, java.util.List<Long> serviceIds);
+    List<ServiceDTO> assignServicesToBarber(String barberId, java.util.List<String> serviceIds);
 }

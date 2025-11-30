@@ -39,7 +39,7 @@ public class BarberController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BarberDTO> getById(@PathVariable Long id) {
+    public ResponseEntity<BarberDTO> getById(@PathVariable String id) {
         return barberService.findById(id)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
@@ -55,7 +55,7 @@ public class BarberController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BarberDTO> update(@PathVariable Long id, @RequestBody BarberDTO barberDto) {
+    public ResponseEntity<BarberDTO> update(@PathVariable String id, @RequestBody BarberDTO barberDto) {
         return barberService.findById(id)
                 .map(existing -> {
                     // ensure DTO id matches path id
@@ -70,30 +70,30 @@ public class BarberController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable String id) {
         barberService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
     @PostMapping("/{barberId}/services/{serviceId}")
-    public ResponseEntity<ServiceDTO> assignService(@PathVariable Long barberId, @PathVariable Long serviceId) {
+    public ResponseEntity<ServiceDTO> assignService(@PathVariable String barberId, @PathVariable String serviceId) {
         ServiceDTO dto = barberService.assignServiceToBarber(barberId, serviceId);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     @DeleteMapping("/{barberId}/services/{serviceId}")
-    public ResponseEntity<Void> unassignService(@PathVariable Long barberId, @PathVariable Long serviceId) {
+    public ResponseEntity<Void> unassignService(@PathVariable String barberId, @PathVariable String serviceId) {
         barberService.unassignServiceFromBarber(barberId, serviceId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{barberId}/services")
-    public ResponseEntity<List<ServiceDTO>> listServicesByBarber(@PathVariable Long barberId) {
+    public ResponseEntity<List<ServiceDTO>> listServicesByBarber(@PathVariable String barberId) {
         List<ServiceDTO> services = barberService.getServicesByBarber(barberId);
         return ResponseEntity.ok(services);
     }
 
     @PostMapping("/{barberId}/services/bulk")
-    public ResponseEntity<List<ServiceDTO>> assignServicesBulk(@PathVariable Long barberId, @RequestBody AssignServicesDTO dto) {
+    public ResponseEntity<List<ServiceDTO>> assignServicesBulk(@PathVariable String barberId, @RequestBody AssignServicesDTO dto) {
         List<ServiceDTO> assigned = barberService.assignServicesToBarber(barberId, dto.getServiceIds());
         return ResponseEntity.status(HttpStatus.CREATED).body(assigned);
     }

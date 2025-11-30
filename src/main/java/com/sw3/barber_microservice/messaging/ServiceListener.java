@@ -47,24 +47,24 @@ public class ServiceListener {
             // Si el evento trae la lista de barberos autorizados, actualizamos nuestra tabla intermedia
             if (event.getBarberIds() != null) {
                 // Estrategia idempotente: calcular diffs entre los barberos actuales y los entrantes
-                Set<Long> incoming = event.getBarberIds().stream().filter(Objects::nonNull).collect(Collectors.toSet());
+                Set<String> incoming = event.getBarberIds().stream().filter(Objects::nonNull).collect(Collectors.toSet());
 
                 // IDs actuales asociados al servicio
-                Set<Long> current = serviceLocal.getBarbers().stream()
+                Set<String> current = serviceLocal.getBarbers().stream()
                         .map(Barber::getId)
                         .filter(Objects::nonNull)
                         .collect(Collectors.toSet());
 
-                Set<Long> toAdd = incoming.stream().filter(id -> !current.contains(id)).collect(Collectors.toSet());
-                Set<Long> toRemove = current.stream().filter(id -> !incoming.contains(id)).collect(Collectors.toSet());
+                Set<String> toAdd = incoming.stream().filter(id -> !current.contains(id)).collect(Collectors.toSet());
+                Set<String> toRemove = current.stream().filter(id -> !incoming.contains(id)).collect(Collectors.toSet());
 
                 // Añadir: traer barberos que faltan y vincular bidireccionalmente
                 if (!toAdd.isEmpty()) {
                     List<Barber> barbersToAdd = barberRepository.findAllById(toAdd);
                     // advertencia si faltan IDs
                     if (barbersToAdd.size() != toAdd.size()) {
-                        Set<Long> found = barbersToAdd.stream().map(Barber::getId).collect(Collectors.toSet());
-                        Set<Long> missing = toAdd.stream().filter(id -> !found.contains(id)).collect(Collectors.toSet());
+                        Set<String> found = barbersToAdd.stream().map(Barber::getId).collect(Collectors.toSet());
+                        Set<String> missing = toAdd.stream().filter(id -> !found.contains(id)).collect(Collectors.toSet());
                         log.warn("Algunos barberos para agregar no existen localmente: {}", missing);
                     }
                     for (Barber b : barbersToAdd) {

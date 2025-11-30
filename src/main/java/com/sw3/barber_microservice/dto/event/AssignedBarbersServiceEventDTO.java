@@ -12,6 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AssignedBarbersServiceEventDTO {
-    private Long serviceId;
-    private List<Long> barberIds;
+    private String serviceId;
+    private List<String> barberIds;
 }

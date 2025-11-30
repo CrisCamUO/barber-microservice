@@ -32,7 +32,7 @@ public class WorkShiftController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<WorkShiftDTO> getById(@PathVariable Long id) {
+    public ResponseEntity<WorkShiftDTO> getById(@PathVariable String id) {
         return workShiftService.findById(id)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
@@ -49,7 +49,7 @@ public class WorkShiftController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<WorkShiftDTO> update(@PathVariable Long id, @RequestBody WorkShiftDTO workShiftDto) {
+    public ResponseEntity<WorkShiftDTO> update(@PathVariable String id, @RequestBody WorkShiftDTO workShiftDto) {
         return workShiftService.findById(id)
                 .map(existing -> {
                     // ensure DTO id matches path id
@@ -61,13 +61,13 @@ public class WorkShiftController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable String id) {
         workShiftService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/barberId/{id}")
-    public ResponseEntity<List<WorkShiftDTO>> getByBarberId(@PathVariable Long id) {
+    public ResponseEntity<List<WorkShiftDTO>> getByBarberId(@PathVariable String id) {
         List<WorkShiftDTO> workShifts = workShiftService.findByBarberId(id);
         if (workShifts.isEmpty()) {
             return ResponseEntity.notFound().build();
