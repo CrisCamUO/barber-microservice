@@ -8,15 +8,21 @@ import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
+
 import com.sw3.barber_microservice.dto.ServiceDTO;
 import com.sw3.barber_microservice.dto.AssignServicesDTO;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+
+import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
@@ -45,8 +51,40 @@ public class BarberController {
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
     //Crea un barbero con los datos del BarberDTO (sin el horario de trabajo)
-    @PostMapping
-    public ResponseEntity<BarberDTO> create(@Valid @RequestBody BarberDTO barberDto) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BarberDTO> create(
+            @RequestPart("name") String name,
+            @RequestPart(value = "lastName", required = false) String lastName,
+            @RequestPart("email") String email,
+            @RequestPart(value = "phone", required = false) String phone,
+            @RequestPart(value = "description", required = false) String specialty,
+            @RequestPart(value = "image", required = false) MultipartFile image) throws IOException {
+
+        BarberDTO barberDto = new BarberDTO();
+        barberDto.setName(name);
+        barberDto.setEmail(email);
+        barberDto.setPhone(phone);
+        if (image != null && !image.isEmpty()) {
+            // Carpeta uploads en la raíz del proyecto (puedes cambiarla a una ruta configurable)
+            Path uploadDir = Paths.get("uploads").toAbsolutePath();
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+            }
+
+            // Generar nombre único para evitar colisiones
+            String original = image.getOriginalFilename();
+            String ext = "";
+            if (original != null && original.contains(".")) {
+                ext = original.substring(original.lastIndexOf('.'));
+            }
+            String filename = UUID.randomUUID().toString() + ext;
+            Path target = uploadDir.resolve(filename);
+
+            // Guardar archivo
+            image.transferTo(target.toFile());
+            // Guardar la ruta relativa o absoluta según prefieras. Aquí guardamos ruta relativa.
+            barberDto.setImage("uploads/" + filename);
+        }
         BarberDTO saved = barberService.save(barberDto);
         if (saved == null) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();

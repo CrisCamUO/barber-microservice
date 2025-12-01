@@ -9,6 +9,7 @@ import com.sw3.barber_microservice.repository.ServiceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +20,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class ServiceAssignedListener {
-
     private final ServiceRepository serviceRepository;
     private final BarberRepository barberRepository;
 
@@ -29,8 +29,9 @@ public class ServiceAssignedListener {
         log.info("📩 Recibido evento de servicios asignados: serviceId={}, barberCount={}",
                 event.getServiceId(), event.getBarberIds() != null ? event.getBarberIds().size() : 0);
 
-        try {
+        
             String serviceId = event.getServiceId();
+            
             List<String> incomingBarberIds = event.getBarberIds() != null ? event.getBarberIds() : Collections.emptyList();
 
             // 1) Obtener o crear servicio local (réplica)
@@ -100,9 +101,6 @@ public class ServiceAssignedListener {
 
             log.info("✅ Sincronización de servicios para barberos procesada: added={}, removed={}", toAdd.size(), toRemove.size());
 
-        } catch (Exception ex) {
-            log.error("❌ Error procesando AssignedBarbersServiceEvent: {}", ex.getMessage(), ex);
-            throw ex;
         }
     }
-}
+

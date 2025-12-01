@@ -22,6 +22,8 @@ public class BarberDTO {
 
     private String description;
 
+    private String image;
+
     public BarberDTO() {
     }
 
