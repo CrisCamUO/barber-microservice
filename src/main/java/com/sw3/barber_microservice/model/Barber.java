@@ -34,6 +34,8 @@ public class Barber {
     private String description;
 
     private String image;
+    
+    private String keycloakId;
 
     @OneToMany(mappedBy = "barber", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<WorkShift> workShifts = new ArrayList<>();

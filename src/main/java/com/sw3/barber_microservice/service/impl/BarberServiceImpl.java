@@ -5,14 +5,16 @@ import com.sw3.barber_microservice.messaging.BarberEventPublisher;
 import com.sw3.barber_microservice.model.Barber;
 import com.sw3.barber_microservice.model.Service;
 import com.sw3.barber_microservice.dto.ServiceDTO;
+import com.sw3.barber_microservice.event.BarberCreatedEvent;
 import com.sw3.barber_microservice.service.BarberService;
+import com.sw3.barber_microservice.service.KeycloakService;
 import com.sw3.barber_microservice.repository.BarberRepository;
 import com.sw3.barber_microservice.repository.ServiceRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +31,10 @@ public class BarberServiceImpl implements BarberService {
     private final ModelMapper modelMapper;
     @Autowired
     private final BarberEventPublisher barberEventPublisher;
+    @Autowired
+    private org.springframework.context.ApplicationEventPublisher applicationEventPublisher;
+    @Autowired
+    private KeycloakService keycloakService;
 
     public BarberServiceImpl(BarberRepository barberRepository, ServiceRepository serviceRepository, ModelMapper modelMapper, BarberEventPublisher barberEventPublisher) {
         this.barberRepository = barberRepository;
@@ -87,14 +93,19 @@ public class BarberServiceImpl implements BarberService {
         }
 
         BarberDTO savedDto = modelMapper.map(saved, BarberDTO.class);
+        // Preserve original password (not persisted in the Barber entity) so Keycloak sync can use it
+        savedDto.setPassword(barberDto.getPassword());
 
         // 5. Publicación del Evento (Con lista de servicios)
         if (esNuevo) {
             barberEventPublisher.publishBarberCreated(savedDto, serviceIds);
+            // publish application event for after-commit Keycloak sync
+            applicationEventPublisher.publishEvent(new BarberCreatedEvent(this, savedDto));
+            //keycloakService.createUserForBarber(savedDto);
         } else {
             barberEventPublisher.publishBarberUpdated(savedDto, serviceIds);
         }
-        
+
         return savedDto;
     }
 
@@ -165,5 +176,39 @@ public class BarberServiceImpl implements BarberService {
 
         // 2. Borrado físico local
         barberRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public BarberDTO setContractFalse(String barberId) {
+        Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
+        barber.setContract(false);
+        Barber saved = barberRepository.save(barber);
+
+        List<String> serviceIds = new ArrayList<>();
+        if (saved.getServices() != null) {
+            serviceIds = saved.getServices().stream().map(s -> s.getId()).collect(Collectors.toList());
+        }
+
+        BarberDTO dto = modelMapper.map(saved, BarberDTO.class);
+        barberEventPublisher.publishBarberUpdated(dto, serviceIds);
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public BarberDTO setAvailability(String barberId, boolean availability) {
+        Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
+        barber.setAvailability(availability);
+        Barber saved = barberRepository.save(barber);
+
+        List<String> serviceIds = new ArrayList<>();
+        if (saved.getServices() != null) {
+            serviceIds = saved.getServices().stream().map(s -> s.getId()).collect(Collectors.toList());
+        }
+
+        BarberDTO dto = modelMapper.map(saved, BarberDTO.class);
+        barberEventPublisher.publishBarberUpdated(dto, serviceIds);
+        return dto;
     }
 }

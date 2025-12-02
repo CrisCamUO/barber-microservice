@@ -10,7 +10,7 @@ import java.time.LocalTime;
 @Data
 public class WorkShiftDTO {
     
-    private String id;
+    private Long id;
     @NotNull
     private DayOfWeekEnum dayOfWeek;
     @NotNull

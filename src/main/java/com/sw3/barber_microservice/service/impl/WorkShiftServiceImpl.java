@@ -47,7 +47,7 @@ public class WorkShiftServiceImpl implements WorkShiftService {
     }
 
     @Override
-    public Optional<WorkShiftDTO> findById(String id) {
+    public Optional<WorkShiftDTO> findById(Long id) {
         return workShiftRepository.findById(id).map(ws -> {
             WorkShiftDTO dto = modelMapper.map(ws, WorkShiftDTO.class);
             dto.setBarberId(ws.getBarber() != null ? ws.getBarber().getId() : null);
@@ -98,7 +98,7 @@ public class WorkShiftServiceImpl implements WorkShiftService {
     }
 
     @Override
-    public void deleteById(String id) {
+    public void deleteById(Long id) {
         workShiftRepository.deleteById(id);
     }
 

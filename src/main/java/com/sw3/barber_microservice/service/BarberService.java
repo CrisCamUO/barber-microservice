@@ -19,4 +19,8 @@ public interface BarberService {
 
     // Bulk assign
     List<ServiceDTO> assignServicesToBarber(String barberId, java.util.List<String> serviceIds);
+    
+    // State changes
+    BarberDTO setContractFalse(String barberId);
+    BarberDTO setAvailability(String barberId, boolean availability);
 }

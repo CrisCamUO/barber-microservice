@@ -32,7 +32,7 @@ public class WorkShiftController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<WorkShiftDTO> getById(@PathVariable String id) {
+    public ResponseEntity<WorkShiftDTO> getById(@PathVariable Long id) {
         return workShiftService.findById(id)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
@@ -49,7 +49,7 @@ public class WorkShiftController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<WorkShiftDTO> update(@PathVariable String id, @RequestBody WorkShiftDTO workShiftDto) {
+    public ResponseEntity<WorkShiftDTO> update(@PathVariable Long id, @RequestBody WorkShiftDTO workShiftDto) {
         return workShiftService.findById(id)
                 .map(existing -> {
                     // ensure DTO id matches path id
@@ -61,7 +61,7 @@ public class WorkShiftController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         workShiftService.deleteById(id);
         return ResponseEntity.noContent().build();
     }

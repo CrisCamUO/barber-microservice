@@ -23,11 +23,14 @@ import com.sw3.barber_microservice.dto.ServiceDTO;
 import com.sw3.barber_microservice.dto.AssignServicesDTO;
 
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @RestController
 @RequestMapping("/api/barbers")
 public class BarberController {
+    private static final Logger log = LoggerFactory.getLogger(BarberController.class);
     @Autowired
     private final BarberService barberService;
 
@@ -57,13 +60,17 @@ public class BarberController {
             @RequestPart(value = "lastName", required = false) String lastName,
             @RequestPart("email") String email,
             @RequestPart(value = "phone", required = false) String phone,
-            @RequestPart(value = "description", required = false) String specialty,
+            @RequestPart(value = "description", required = false) String description,
+            @RequestPart("password") String password,
             @RequestPart(value = "image", required = false) MultipartFile image) throws IOException {
 
         BarberDTO barberDto = new BarberDTO();
         barberDto.setName(name);
+        barberDto.setLastName(lastName);
         barberDto.setEmail(email);
         barberDto.setPhone(phone);
+        barberDto.setDescription(description);
+        barberDto.setPassword(password);
         if (image != null && !image.isEmpty()) {
             // Carpeta uploads en la raíz del proyecto (puedes cambiarla a una ruta configurable)
             Path uploadDir = Paths.get("uploads").toAbsolutePath();
@@ -92,15 +99,51 @@ public class BarberController {
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<BarberDTO> update(@PathVariable String id, @RequestBody BarberDTO barberDto) {
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BarberDTO> update(
+            @PathVariable String id,
+            @RequestPart("name") String name,
+            @RequestPart(value = "lastName", required = false) String lastName,
+            @RequestPart("email") String email,
+            @RequestPart(value = "phone", required = false) String phone,
+            @RequestPart(value = "description", required = false) String description,
+            @RequestPart(value = "password", required = false) String password,
+            @RequestPart(value = "image", required = false) MultipartFile image) throws IOException {
+
         return barberService.findById(id)
                 .map(existing -> {
-                    // ensure DTO id matches path id
+                    BarberDTO barberDto = new BarberDTO();
                     barberDto.setId(id);
+                    barberDto.setName(name);
+                    barberDto.setLastName(lastName);
+                    barberDto.setEmail(email);
+                    barberDto.setPhone(phone);
+                    barberDto.setDescription(description);
+                    barberDto.setPassword(password);
+                    if (image != null && !image.isEmpty()) {
+                        try {
+                            Path uploadDir = Paths.get("uploads").toAbsolutePath();
+                            if (!Files.exists(uploadDir)) {
+                                Files.createDirectories(uploadDir);
+                            }
+                            String original = image.getOriginalFilename();
+                            String ext = "";
+                            if (original != null && original.contains(".")) {
+                                ext = original.substring(original.lastIndexOf('.'));
+                            }
+                            String filename = UUID.randomUUID().toString() + ext;
+                            Path target = uploadDir.resolve(filename);
+                            image.transferTo(target.toFile());
+                            barberDto.setImage("uploads/" + filename);
+                        } catch (IOException e) {
+                            log.error("Error saving image for barber {}: {}", id, e.getMessage());
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    System.out.println("Password received in update: " + password);
                     BarberDTO saved = barberService.save(barberDto);
                     if (saved == null) {
-                        System.err.println("Error: No se pudo actualizar el barbero con ID " + id);
+                        log.error("Error: No se pudo actualizar el barbero con ID {}", id);
                     }
                     return ResponseEntity.ok(saved);
                 })
@@ -128,6 +171,26 @@ public class BarberController {
     public ResponseEntity<List<ServiceDTO>> listServicesByBarber(@PathVariable String barberId) {
         List<ServiceDTO> services = barberService.getServicesByBarber(barberId);
         return ResponseEntity.ok(services);
+    }
+
+    @PostMapping("/{id}/contract/deactivate")
+    public ResponseEntity<BarberDTO> deactivateContract(@PathVariable String id) {
+        try {
+            BarberDTO updated = barberService.setContractFalse(id);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/{id}/availability")
+    public ResponseEntity<BarberDTO> setAvailability(@PathVariable String id, @RequestParam boolean available) {
+        try {
+            BarberDTO updated = barberService.setAvailability(id, available);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/{barberId}/services/bulk")

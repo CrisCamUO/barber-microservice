@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface WorkShiftRepository extends JpaRepository<WorkShift, String> {
+public interface WorkShiftRepository extends JpaRepository<WorkShift, Long> {
     public java.util.List<WorkShift> findByBarberId(String barberId);
 }

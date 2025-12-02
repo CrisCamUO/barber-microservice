@@ -24,6 +24,10 @@ public class BarberDTO {
 
     private String image;
 
+    private String keycloakId;
+    @NotNull
+    private String password;
+
     public BarberDTO() {
     }
 
