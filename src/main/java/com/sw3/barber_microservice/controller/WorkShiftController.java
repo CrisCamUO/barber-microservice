@@ -38,16 +38,17 @@ public class WorkShiftController {
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
     //Crea un horario de trabajo con los datos del WorkShiftDTO (incluyendo el ID del barbero asociado)
-    /*
     @PostMapping("/admin/workshifts")
     public ResponseEntity<WorkShiftDTO> create(@Valid @RequestBody WorkShiftDTO workShiftDto) {
-        WorkShiftDTO saved = workShiftService.save(workShiftDto);
+        // El servicio espera que le pasemos el barberId como String
+        String barberId = workShiftDto.getBarberId();
+        WorkShiftDTO saved = workShiftService.save(workShiftDto, barberId);
         if (saved != null) {
             return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-    }*/
+    }
     //7- Asignarle un nuevo horario de trabajo a un barbero existente
     @PutMapping("/admin/workshifts/{id}/horarios")
     public ResponseEntity<WorkShiftDTO> update(@PathVariable String id, @RequestBody WorkShiftDTO workShiftDto) {
@@ -64,6 +65,19 @@ public class WorkShiftController {
         workShiftService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+    
+    /**
+     * Obtiene los horarios de trabajo de un barbero (endpoint público para frontend).
+     */
+    @GetMapping("/public/barbers/{barberId}/workshifts")
+    public ResponseEntity<List<WorkShiftDTO>> getWorkShiftsByBarberId(@PathVariable String barberId) {
+        List<WorkShiftDTO> workShifts = workShiftService.findByBarberId(barberId);
+        if (workShifts.isEmpty()) {
+            return ResponseEntity.ok(List.of()); // Retornar lista vacía en lugar de 404
+        }
+        return ResponseEntity.ok(workShifts);
+    }
+    
     @GetMapping("/admin/workshifts/{id}/horarios")
     public ResponseEntity<List<WorkShiftDTO>> getByBarberId(@PathVariable String id) {
         List<WorkShiftDTO> workShifts = workShiftService.findByBarberId(id);
