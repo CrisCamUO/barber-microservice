@@ -41,7 +41,7 @@ public class BarberController {
         this.serviceService = serviceService;
     }
     //Obtener todos los barberos
-    @GetMapping("/admin/barbers")
+    @GetMapping("/public/barbers")
     public List<BarberDTO> getAll() {
         return barberService.findAll();
     }
@@ -175,7 +175,7 @@ public class BarberController {
     }*/
 
     //4- Lista los servicios de un barbero por Id
-    @GetMapping("/admin/barbers/{barberId}/servicios")
+    @GetMapping("/public/barbers/{barberId}/servicios")
     //@GetMapping("/{barberId}/services")
     public ResponseEntity<List<ServiceDTO>> listServicesByBarber(@PathVariable String barberId) {
         List<ServiceDTO> services = barberService.getServicesByBarber(barberId);
