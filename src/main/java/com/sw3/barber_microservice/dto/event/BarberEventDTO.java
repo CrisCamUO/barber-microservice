@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BarberEventDTO {
-    private Long id;
+    private String id;
     private String name;
     private String email; 
     private Boolean active; // Mapearemos 'contract' aquí

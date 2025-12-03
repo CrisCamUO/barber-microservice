@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface WorkShiftRepository extends JpaRepository<WorkShift, Long> {
-    public java.util.List<WorkShift> findByBarberId(Long barberId);
+    public java.util.List<WorkShift> findByBarberId(String barberId);
 }

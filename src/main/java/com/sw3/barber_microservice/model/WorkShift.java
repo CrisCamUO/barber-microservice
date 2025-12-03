@@ -10,9 +10,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Data;
+
 import java.time.LocalTime;
 
 @Entity
+@Data
 @Table(name = "work_shifts")
 public class WorkShift {
 
@@ -33,43 +36,4 @@ public class WorkShift {
 
     public WorkShift() {}
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public DayOfWeekEnum getDayOfWeek() {
-        return dayOfWeek;
-    }
-
-    public void setDayOfWeek(DayOfWeekEnum dayOfWeek) {
-        this.dayOfWeek = dayOfWeek;
-    }
-
-    public LocalTime getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public LocalTime getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(LocalTime endTime) {
-        this.endTime = endTime;
-    }
-
-    public Barber getBarber() {
-        return barber;
-    }
-
-    public void setBarber(Barber barber) {
-        this.barber = barber;
-    }
 }

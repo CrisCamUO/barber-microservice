@@ -14,5 +14,4 @@ public interface ServiceService {
     ServiceDTO save(ServiceDTO serviceDto);
 
     void deleteById(Long id);
-
 }

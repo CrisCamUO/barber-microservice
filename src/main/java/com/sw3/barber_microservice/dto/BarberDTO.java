@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class BarberDTO {
     
-    private Long id;
+    private String id;
     @NotNull
     private String name;
     @NotNull
@@ -21,6 +21,12 @@ public class BarberDTO {
     private Boolean contract;
 
     private String description;
+
+    private String image;
+
+    private String keycloakId;
+    @NotNull
+    private String password;
 
     public BarberDTO() {
     }

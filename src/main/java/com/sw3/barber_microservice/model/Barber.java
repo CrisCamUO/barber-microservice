@@ -4,8 +4,7 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.ManyToMany;
@@ -22,8 +21,7 @@ import lombok.*;
 public class Barber {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     private String name;
 
@@ -34,6 +32,10 @@ public class Barber {
     private String phone;
 
     private String description;
+
+    private String image;
+    
+    private String keycloakId;
 
     @OneToMany(mappedBy = "barber", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<WorkShift> workShifts = new ArrayList<>();
@@ -55,5 +57,12 @@ public class Barber {
     // Relationship Barber <-> Service modelled as ManyToMany with join table `barber_service`.
 
     public Barber() {}
+
+    @PrePersist
+    private void ensureId() {
+        if (this.id == null || this.id.isBlank()) {
+            this.id = java.util.UUID.randomUUID().toString();
+        }
+    }
 
 }

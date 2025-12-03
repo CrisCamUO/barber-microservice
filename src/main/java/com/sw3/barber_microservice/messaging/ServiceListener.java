@@ -13,6 +13,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -29,8 +33,23 @@ public class ServiceListener {
 
         try {
             // 1. Buscar o Crear el Servicio Local (Réplica)
-            Service serviceLocal = serviceRepository.findById(event.getId()).orElse(new Service());
-            
+            java.util.Optional<Service> existingOpt = serviceRepository.findById(event.getId());
+            boolean isNew = existingOpt.isEmpty();
+            Service serviceLocal = existingOpt.orElse(new Service());
+
+            // Capturar estado previo para hacer comparaciones idempotentes
+            String prevName = null;
+            Boolean prevActive = null;
+            Set<String> prevBarberIds = new HashSet<>();
+            if (!isNew) {
+                prevName = existingOpt.get().getName();
+                prevActive = existingOpt.get().getActive();
+                prevBarberIds = existingOpt.get().getBarbers().stream()
+                        .map(Barber::getId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+            }
+
             // Asignación Manual del ID (Debe coincidir con el otro MS)
             serviceLocal.setId(event.getId());
             serviceLocal.setName(event.getName());
@@ -39,26 +58,90 @@ public class ServiceListener {
             boolean isActive = "Activo".equalsIgnoreCase(event.getSystemStatus());
             serviceLocal.setActive(isActive);
 
+            // Si la entidad es nueva, persístela primero para que los barberos puedan referenciarla
+            if (isNew) {
+                serviceRepository.save(serviceLocal);
+                // marcar como no nueva para el resto del flujo
+                isNew = false;
+            }
+
             // 2. SINCRONIZACIÓN DE RELACIONES (BarberServices)
             // Si el evento trae la lista de barberos autorizados, actualizamos nuestra tabla intermedia
             if (event.getBarberIds() != null) {
-                // Estrategia: Limpiar y re-asignar. 
-                // Como 'cascade = CascadeType.ALL' y 'orphanRemoval = true' (asumido/recomendado), 
-                // limpiar la lista borra las filas en barber_services.
-                // switch to ManyToMany: clear set of barbers and add found barbers
-                serviceLocal.getBarbers().clear();
+                // Estrategia idempotente: calcular diffs entre los barberos actuales y los entrantes
+                Set<String> incoming = event.getBarberIds().stream().filter(Objects::nonNull).collect(Collectors.toSet());
 
-                List<Barber> barbers = barberRepository.findAllById(event.getBarberIds());
-                serviceLocal.getBarbers().addAll(barbers);
+                // IDs actuales asociados al servicio
+                Set<String> current = serviceLocal.getBarbers().stream()
+                        .map(Barber::getId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+
+                Set<String> toAdd = incoming.stream().filter(id -> !current.contains(id)).collect(Collectors.toSet());
+                Set<String> toRemove = current.stream().filter(id -> !incoming.contains(id)).collect(Collectors.toSet());
+
+                // Añadir: traer barberos que faltan y vincular bidireccionalmente
+                if (!toAdd.isEmpty()) {
+                    List<Barber> barbersToAdd = barberRepository.findAllById(toAdd);
+                    // advertencia si faltan IDs
+                    if (barbersToAdd.size() != toAdd.size()) {
+                        Set<String> found = barbersToAdd.stream().map(Barber::getId).collect(Collectors.toSet());
+                        Set<String> missing = toAdd.stream().filter(id -> !found.contains(id)).collect(Collectors.toSet());
+                        log.warn("Algunos barberos para agregar no existen localmente: {}", missing);
+                    }
+                    for (Barber b : barbersToAdd) {
+                        // asegurar relación inversa
+                        if (serviceLocal.getBarbers().stream().noneMatch(sb -> Objects.equals(sb.getId(), b.getId()))) {
+                            serviceLocal.getBarbers().add(b);
+                        }
+                        if (b.getServices().stream().noneMatch(s -> Objects.equals(s.getId(), serviceLocal.getId()))) {
+                            b.getServices().add(serviceLocal);
+                        }
+                    }
+                    barberRepository.saveAll(barbersToAdd);
+                }
+
+                // Remover: quitar relación en barberos que ya no están
+                if (!toRemove.isEmpty()) {
+                    List<Barber> barbersToRemove = barberRepository.findAllById(toRemove);
+                    for (Barber b : barbersToRemove) {
+                        b.getServices().removeIf(s -> Objects.equals(s.getId(), serviceLocal.getId()));
+                        serviceLocal.getBarbers().removeIf(bb -> Objects.equals(bb.getId(), b.getId()));
+                    }
+                    barberRepository.saveAll(barbersToRemove);
+                }
             }
 
-            // 3. Guardar (Upsert)
-            serviceRepository.save(serviceLocal);
-            log.info("✅ Servicio sincronizado localmente con {} barberos asociados.", 
-                    event.getBarberIds() != null ? event.getBarberIds().size() : 0);
+                // 3. Guardar (Upsert) - Evitar guardado si no hay cambios (idempotencia)
+                // Si la entidad no existía antes, forzamos el guardado
+                if (isNew) {
+                    serviceRepository.save(serviceLocal);
+                    log.info("Servicio creado localmente con {} barberos asociados.",
+                            event.getBarberIds() != null ? event.getBarberIds().size() : 0);
+                } else {
+                    // Comparar estado previo (antes de mutaciones) con el estado actual
+                    boolean nameChanged = !Objects.equals(prevName, serviceLocal.getName());
+                    boolean activeChanged = !Objects.equals(prevActive, serviceLocal.getActive());
+
+                    Set<String> currentAfter = serviceLocal.getBarbers().stream()
+                            .map(Barber::getId)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+                    Set<String> incomingAfter = event.getBarberIds() != null ? event.getBarberIds().stream().filter(Objects::nonNull).collect(Collectors.toSet()) : new HashSet<>();
+
+                    boolean barbersChanged = !Objects.equals(prevBarberIds, currentAfter);
+
+                    if (!nameChanged && !activeChanged && !barbersChanged) {
+                        log.info("ℹ️ Evento de servicio recibido sin cambios. Ignorando guardado. serviceId={}", event.getId());
+                    } else {
+                        serviceRepository.save(serviceLocal);
+                        log.info("✅ Servicio sincronizado localmente con {} barberos asociados.",
+                                event.getBarberIds() != null ? event.getBarberIds().size() : 0);
+                    }
+                }
 
         } catch (Exception e) {
-            log.error("❌ Error al procesar evento de servicio: {}", e.getMessage());
+            log.error("Error al procesar evento de servicio: {}", e.getMessage());
             e.printStackTrace();
         }
     }

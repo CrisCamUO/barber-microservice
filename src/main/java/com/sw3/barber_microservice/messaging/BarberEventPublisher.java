@@ -45,7 +45,7 @@ public class BarberEventPublisher {
         log.info("Evento enviado: barber.updated -> ID: {}", dto.getId());
     }
 
-    public void publishBarberInactivated(Long barberId) {
+    public void publishBarberInactivated(String barberId) {
         // Evento mínimo para inactivar
         BarberEventDTO event = BarberEventDTO.builder()
                 .id(barberId)

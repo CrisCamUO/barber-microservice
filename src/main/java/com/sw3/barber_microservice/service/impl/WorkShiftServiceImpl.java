@@ -1,7 +1,6 @@
 package com.sw3.barber_microservice.service.impl;
 
 import com.sw3.barber_microservice.dto.WorkShiftDTO;
-import com.sw3.barber_microservice.messaging.BarberEventPublisher;
 import com.sw3.barber_microservice.messaging.WorkShiftEventPublisher;
 import com.sw3.barber_microservice.model.Barber;
 import com.sw3.barber_microservice.model.DayOfWeekEnum;
@@ -57,7 +56,7 @@ public class WorkShiftServiceImpl implements WorkShiftService {
     }
 
     @Override
-    public List<WorkShiftDTO> findByBarberId(Long barberId) {
+    public List<WorkShiftDTO> findByBarberId(String barberId) {
         return workShiftRepository.findByBarberId(barberId).stream().map(ws -> {
             WorkShiftDTO dto = modelMapper.map(ws, WorkShiftDTO.class);
             dto.setBarberId(ws.getBarber() != null ? ws.getBarber().getId() : null);
@@ -66,19 +65,18 @@ public class WorkShiftServiceImpl implements WorkShiftService {
     }
 
     @Override
-    public WorkShiftDTO save(WorkShiftDTO workShiftDto) {
+    public WorkShiftDTO save(WorkShiftDTO workShiftDto, String barberId) {
         WorkShift ws = modelMapper.map(workShiftDto, WorkShift.class);
-        //Validamos si el id del barbero en el dto existe y le asignamos una entidad barbero a la entidad worshift
-        if (workShiftDto.getBarberId() != null) {
-            Barber barber = barberRepository.findById(workShiftDto.getBarberId()).orElse(null);
+        //Validamos si el id del barbero existe y le asignamos una entidad barbero a la entidad worshift
+        if (barberId != null) {
+            Barber barber = barberRepository.findById(barberId).orElse(null);
             ws.setBarber(barber);
         } else {
             System.err.println("Error: No existe el barbero con ID " + workShiftDto.getBarberId());
             return null;
-            //ws.setBarber(null);
         }
         //Validamos que no se traslape los horarios de trabajo para el mismo barbero
-            //obtener los horarios existentes para el barbero
+        //obtener los horarios existentes para el barbero
         List<WorkShift> existingShifts = workShiftRepository.findByBarberId(ws.getBarber().getId());
             //validar traslapes
         for (WorkShift existing : existingShifts) {

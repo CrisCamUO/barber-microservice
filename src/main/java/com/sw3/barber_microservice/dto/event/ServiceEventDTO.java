@@ -20,7 +20,7 @@ public class ServiceEventDTO {
     private Integer duration;
     
     // Lista de barberos asignados a este servicio (para sincronizar la relación aquí)
-    private List<Long> barberIds; 
+    private List<String> barberIds; 
     
     private String availabilityStatus; // "Disponible" | "No Disponible"
     private String systemStatus;       // "Activo" | "Inactivo"
