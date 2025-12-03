@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 
 @RestController
-@RequestMapping("/api/barbers")
+//@RequestMapping("/api/barbers")
 public class BarberController {
     private static final Logger log = LoggerFactory.getLogger(BarberController.class);
     @Autowired
@@ -41,20 +41,21 @@ public class BarberController {
         this.barberService = barberService;
         this.serviceService = serviceService;
     }
-
+    //@GetMapping("/barberos/public/barbers")
     @GetMapping
     public List<BarberDTO> getAll() {
         return barberService.findAll();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("public/barbers/{id}")
     public ResponseEntity<BarberDTO> getById(@PathVariable String id) {
         return barberService.findById(id)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
     //Crea un barbero con los datos del BarberDTO (sin el horario de trabajo)
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    //@PostMapping
+    @PostMapping(path = "/admin/barber",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BarberDTO> create(
             @RequestPart("name") String name,
             @RequestPart(value = "lastName", required = false) String lastName,
@@ -156,13 +157,13 @@ public class BarberController {
         return ResponseEntity.noContent().build();
     }
     @PostMapping("/{barberId}/services/{serviceId}")
-    public ResponseEntity<ServiceDTO> assignService(@PathVariable String barberId, @PathVariable String serviceId) {
+    public ResponseEntity<ServiceDTO> assignService(@PathVariable String barberId, @PathVariable Long serviceId) {
         ServiceDTO dto = barberService.assignServiceToBarber(barberId, serviceId);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     @DeleteMapping("/{barberId}/services/{serviceId}")
-    public ResponseEntity<Void> unassignService(@PathVariable String barberId, @PathVariable String serviceId) {
+    public ResponseEntity<Void> unassignService(@PathVariable String barberId, @PathVariable Long serviceId) {
         barberService.unassignServiceFromBarber(barberId, serviceId);
         return ResponseEntity.noContent().build();
     }

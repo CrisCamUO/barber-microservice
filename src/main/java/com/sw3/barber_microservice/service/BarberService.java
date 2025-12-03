@@ -13,12 +13,12 @@ public interface BarberService {
     void deleteById(String id);
 
     // Associations
-    ServiceDTO assignServiceToBarber(String barberId, String serviceId);
-    void unassignServiceFromBarber(String barberId, String serviceId);
+    ServiceDTO assignServiceToBarber(String barberId, Long serviceId);
+    void unassignServiceFromBarber(String barberId, Long serviceId);
     List<ServiceDTO> getServicesByBarber(String barberId);
 
     // Bulk assign
-    List<ServiceDTO> assignServicesToBarber(String barberId, java.util.List<String> serviceIds);
+    List<ServiceDTO> assignServicesToBarber(String barberId, java.util.List<Long> serviceIds);
     
     // State changes
     BarberDTO setContractFalse(String barberId);

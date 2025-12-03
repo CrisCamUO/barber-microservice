@@ -32,7 +32,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public Optional<ServiceDTO> findById(String id) {
+    public Optional<ServiceDTO> findById(Long id) {
         return serviceRepository.findById(id).map(s -> modelMapper.map(s, ServiceDTO.class));
     }
 
@@ -44,7 +44,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public void deleteById(String id) {
+    public void deleteById(Long id) {
         serviceRepository.deleteById(id);
     }
 

@@ -9,10 +9,9 @@ public interface ServiceService {
 
     List<ServiceDTO> findAll();
 
-    Optional<ServiceDTO> findById(String id);
+    Optional<ServiceDTO> findById(Long id);
 
     ServiceDTO save(ServiceDTO serviceDto);
 
-    void deleteById(String id);
-
+    void deleteById(Long id);
 }

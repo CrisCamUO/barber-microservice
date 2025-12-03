@@ -85,7 +85,7 @@ public class BarberServiceImpl implements BarberService {
 
         // 4. Extracción de IDs de Servicios para sincronización
         // Obtenemos la lista de servicios asociados para enviarla al otro MS
-        List<String> serviceIds = new ArrayList<>();
+        List<Long> serviceIds = new ArrayList<>();
         if (saved.getServices() != null) {
             serviceIds = saved.getServices().stream()
                 .map(svc -> svc.getId())
@@ -111,7 +111,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public ServiceDTO assignServiceToBarber(String barberId, String serviceId) {
+    public ServiceDTO assignServiceToBarber(String barberId, Long serviceId) {
         Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
         Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new IllegalArgumentException("Service not found"));
 
@@ -129,7 +129,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void unassignServiceFromBarber(String barberId, String serviceId) {
+    public void unassignServiceFromBarber(String barberId, Long serviceId) {
         Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
         Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new IllegalArgumentException("Service not found"));
 
@@ -148,7 +148,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public List<ServiceDTO> assignServicesToBarber(String barberId, List<String> serviceIds) {
+    public List<ServiceDTO> assignServicesToBarber(String barberId, List<Long> serviceIds) {
         Barber barber = barberRepository.findById(barberId).orElseThrow(() -> new IllegalArgumentException("Barber not found"));
 
         List<Service> services = serviceRepository.findAllById(serviceIds);
@@ -185,7 +185,7 @@ public class BarberServiceImpl implements BarberService {
         barber.setContract(false);
         Barber saved = barberRepository.save(barber);
 
-        List<String> serviceIds = new ArrayList<>();
+        List<Long> serviceIds = new ArrayList<>();
         if (saved.getServices() != null) {
             serviceIds = saved.getServices().stream().map(s -> s.getId()).collect(Collectors.toList());
         }
@@ -202,7 +202,7 @@ public class BarberServiceImpl implements BarberService {
         barber.setAvailability(availability);
         Barber saved = barberRepository.save(barber);
 
-        List<String> serviceIds = new ArrayList<>();
+        List<Long> serviceIds = new ArrayList<>();
         if (saved.getServices() != null) {
             serviceIds = saved.getServices().stream().map(s -> s.getId()).collect(Collectors.toList());
         }

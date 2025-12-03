@@ -4,15 +4,15 @@ import java.util.List;
 
 public class AssignServicesDTO {
 
-    private List<String> serviceIds;
+    private List<Long> serviceIds;
 
     public AssignServicesDTO() {}
 
-    public List<String> getServiceIds() {
+    public List<Long> getServiceIds() {
         return serviceIds;
     }
 
-    public void setServiceIds(List<String> serviceIds) {
+    public void setServiceIds(List<Long> serviceIds) {
         this.serviceIds = serviceIds;
     }
 }

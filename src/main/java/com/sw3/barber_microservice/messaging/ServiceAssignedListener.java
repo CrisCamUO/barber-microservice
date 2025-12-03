@@ -30,7 +30,7 @@ public class ServiceAssignedListener {
                 event.getServiceId(), event.getBarberIds() != null ? event.getBarberIds().size() : 0);
 
         
-            String serviceId = event.getServiceId();
+            Long serviceId = event.getServiceId();
             
             List<String> incomingBarberIds = event.getBarberIds() != null ? event.getBarberIds() : Collections.emptyList();
 

@@ -23,7 +23,7 @@ public class BarberEventPublisher {
      * @param dto El barbero creado.
      * @param serviceIds Lista de IDs de servicios asociados (si los hay).
      */
-    public void publishBarberCreated(BarberDTO dto, List<String> serviceIds) {
+    public void publishBarberCreated(BarberDTO dto, List<Long> serviceIds) {
         BarberEventDTO event = mapToEvent(dto, serviceIds);
         
         rabbitTemplate.convertAndSend(
@@ -34,7 +34,7 @@ public class BarberEventPublisher {
         log.info("Evento enviado: barber.created -> ID: {}", dto.getId());
     }
 
-    public void publishBarberUpdated(BarberDTO dto, List<String> serviceIds) {
+    public void publishBarberUpdated(BarberDTO dto, List<Long> serviceIds) {
         BarberEventDTO event = mapToEvent(dto, serviceIds);
         
         rabbitTemplate.convertAndSend(
@@ -62,7 +62,7 @@ public class BarberEventPublisher {
     }
 
     // Método helper para convertir tu DTO local al DTO del evento
-    private BarberEventDTO mapToEvent(BarberDTO dto, List<String> serviceIds) {
+    private BarberEventDTO mapToEvent(BarberDTO dto, List<Long> serviceIds) {
         // Concatenamos Nombre y Apellido para el sistema externo
         String fullName = dto.getName();
         if (dto.getLastName() != null) {

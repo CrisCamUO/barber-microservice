@@ -18,5 +18,5 @@ public class BarberEventDTO {
     private Boolean active; // Mapearemos 'contract' aquí
     
     // Lista de servicios que este barbero realiza (para sincronizar la relación allá)
-    private List<String> serviceIds; 
+    private List<Long> serviceIds; 
 }
