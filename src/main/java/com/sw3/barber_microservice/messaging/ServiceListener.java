@@ -33,8 +33,23 @@ public class ServiceListener {
 
         try {
             // 1. Buscar o Crear el Servicio Local (Réplica)
-            Service serviceLocal = serviceRepository.findById(event.getId()).orElse(new Service());
-            
+            java.util.Optional<Service> existingOpt = serviceRepository.findById(event.getId());
+            boolean isNew = existingOpt.isEmpty();
+            Service serviceLocal = existingOpt.orElse(new Service());
+
+            // Capturar estado previo para hacer comparaciones idempotentes
+            String prevName = null;
+            Boolean prevActive = null;
+            Set<String> prevBarberIds = new HashSet<>();
+            if (!isNew) {
+                prevName = existingOpt.get().getName();
+                prevActive = existingOpt.get().getActive();
+                prevBarberIds = existingOpt.get().getBarbers().stream()
+                        .map(Barber::getId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+            }
+
             // Asignación Manual del ID (Debe coincidir con el otro MS)
             serviceLocal.setId(event.getId());
             serviceLocal.setName(event.getName());
@@ -42,6 +57,13 @@ public class ServiceListener {
             // Mapeo de estado: "Activo" -> true, cualquier otra cosa -> false
             boolean isActive = "Activo".equalsIgnoreCase(event.getSystemStatus());
             serviceLocal.setActive(isActive);
+
+            // Si la entidad es nueva, persístela primero para que los barberos puedan referenciarla
+            if (isNew) {
+                serviceRepository.save(serviceLocal);
+                // marcar como no nueva para el resto del flujo
+                isNew = false;
+            }
 
             // 2. SINCRONIZACIÓN DE RELACIONES (BarberServices)
             // Si el evento trae la lista de barberos autorizados, actualizamos nuestra tabla intermedia
@@ -90,13 +112,36 @@ public class ServiceListener {
                 }
             }
 
-            // 3. Guardar (Upsert)
-            serviceRepository.save(serviceLocal);
-            log.info("✅ Servicio sincronizado localmente con {} barberos asociados.", 
-                    event.getBarberIds() != null ? event.getBarberIds().size() : 0);
+                // 3. Guardar (Upsert) - Evitar guardado si no hay cambios (idempotencia)
+                // Si la entidad no existía antes, forzamos el guardado
+                if (isNew) {
+                    serviceRepository.save(serviceLocal);
+                    log.info("Servicio creado localmente con {} barberos asociados.",
+                            event.getBarberIds() != null ? event.getBarberIds().size() : 0);
+                } else {
+                    // Comparar estado previo (antes de mutaciones) con el estado actual
+                    boolean nameChanged = !Objects.equals(prevName, serviceLocal.getName());
+                    boolean activeChanged = !Objects.equals(prevActive, serviceLocal.getActive());
+
+                    Set<String> currentAfter = serviceLocal.getBarbers().stream()
+                            .map(Barber::getId)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+                    Set<String> incomingAfter = event.getBarberIds() != null ? event.getBarberIds().stream().filter(Objects::nonNull).collect(Collectors.toSet()) : new HashSet<>();
+
+                    boolean barbersChanged = !Objects.equals(prevBarberIds, currentAfter);
+
+                    if (!nameChanged && !activeChanged && !barbersChanged) {
+                        log.info("ℹ️ Evento de servicio recibido sin cambios. Ignorando guardado. serviceId={}", event.getId());
+                    } else {
+                        serviceRepository.save(serviceLocal);
+                        log.info("✅ Servicio sincronizado localmente con {} barberos asociados.",
+                                event.getBarberIds() != null ? event.getBarberIds().size() : 0);
+                    }
+                }
 
         } catch (Exception e) {
-            log.error("❌ Error al procesar evento de servicio: {}", e.getMessage());
+            log.error("Error al procesar evento de servicio: {}", e.getMessage());
             e.printStackTrace();
         }
     }

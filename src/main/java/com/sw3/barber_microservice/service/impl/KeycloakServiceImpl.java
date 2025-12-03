@@ -97,6 +97,9 @@ public class KeycloakServiceImpl implements KeycloakService {
         // 4) assign role
         assignRealmRole(userId, token);
 
+        // 4.b) remove any default-roles assigned by the realm so the user only keeps the explicit BARBER role
+        removeDefaultRealmRoles(userId, token);
+
         // 5) persist keycloakId in local Barber
         barberRepository.findById(barberDto.getId()).ifPresent(b -> {
             b.setKeycloakId(userId);
@@ -176,6 +179,48 @@ public class KeycloakServiceImpl implements KeycloakService {
         }
     }
 
+    /**
+     * Remove any realm role mappings whose name starts with "default-roles".
+     * This targets the automatic "default-roles-<realm>" assignment so created users
+     * won't keep the realm default role and will only have explicit roles like BARBER.
+     */
+    private void removeDefaultRealmRoles(String userId, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        String mappingsUrl = String.format("%s/admin/realms/%s/users/%s/role-mappings/realm", keycloakUrl, realm, userId);
+        try {
+            ResponseEntity<JsonNode> resp = restTemplate.exchange(mappingsUrl, HttpMethod.GET, new HttpEntity<>(headers), JsonNode.class);
+            if (!resp.getStatusCode().is2xxSuccessful() || resp.getBody() == null) {
+                return; // nothing to remove or failed to fetch
+            }
+
+            ArrayNode toRemove = objectMapper.createArrayNode();
+            for (JsonNode role : resp.getBody()) {
+                String roleName = role.has("name") ? role.get("name").asText() : null;
+                if (roleName != null && roleName.startsWith("default-roles")) {
+                    ObjectNode r = objectMapper.createObjectNode();
+                    r.put("id", role.get("id").asText());
+                    r.put("name", roleName);
+                    toRemove.add(r);
+                }
+            }
+
+            if (toRemove.size() > 0) {
+                HttpEntity<String> delReq = new HttpEntity<>(toRemove.toString(), headers);
+                ResponseEntity<Void> delResp = restTemplate.exchange(mappingsUrl, HttpMethod.DELETE, delReq, Void.class);
+                if (!delResp.getStatusCode().is2xxSuccessful()) {
+                    // non-fatal: log and continue
+                    System.err.println("Warning: failed to remove default realm roles for user " + userId + ", status=" + delResp.getStatusCode());
+                }
+            }
+        } catch (HttpClientErrorException e) {
+            // ignore non-fatal errors but log for debugging
+            System.err.println("Warning: error removing default realm roles for user " + userId + ": " + e.getMessage());
+        }
+    }
+
     private void setUserPassword(String userId, String password, String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
@@ -187,7 +232,7 @@ public class KeycloakServiceImpl implements KeycloakService {
         ObjectNode cred = objectMapper.createObjectNode();
         cred.put("type", "password");
         cred.put("value", pwd);
-        cred.put("temporary", true);
+        cred.put("temporary", false);
 
         String resetUrl = String.format("%s/admin/realms/%s/users/%s/reset-password", keycloakUrl, realm, userId);
         HttpEntity<String> resetReq = new HttpEntity<>(cred.toString(), headers);
