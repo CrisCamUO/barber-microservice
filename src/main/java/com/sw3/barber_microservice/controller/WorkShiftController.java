@@ -37,17 +37,7 @@ public class WorkShiftController {
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    //Crea un horario de trabajo con los datos del WorkShiftDTO (incluyendo el ID del barbero asociado)
-    /*
-    @PostMapping("/admin/workshifts")
-    public ResponseEntity<WorkShiftDTO> create(@Valid @RequestBody WorkShiftDTO workShiftDto) {
-        WorkShiftDTO saved = workShiftService.save(workShiftDto);
-        if (saved != null) {
-            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-    }*/
+    
     //7- Asignarle un nuevo horario de trabajo a un barbero existente
     @PutMapping("/admin/workshifts/{id}/horarios")
     public ResponseEntity<WorkShiftDTO> update(@PathVariable String id, @RequestBody WorkShiftDTO workShiftDto) {
@@ -72,6 +62,51 @@ public class WorkShiftController {
         } else {
             return ResponseEntity.ok(workShifts);
         }
+    }
+    
+    // Batch create/update workshifts for efficiency from frontend
+    @PostMapping("/admin/workshifts/batch")
+    public ResponseEntity<?> createBatch(@RequestBody List<com.sw3.barber_microservice.dto.WorkShiftRequestDTO> requests) {
+        java.util.List<WorkShiftDTO> saved = new java.util.ArrayList<>();
+        java.util.List<java.util.Map<String, Object>> errors = new java.util.ArrayList<>();
+
+        java.time.format.DateTimeFormatter tf = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+
+        for (int i = 0; i < requests.size(); i++) {
+            com.sw3.barber_microservice.dto.WorkShiftRequestDTO r = requests.get(i);
+            try {
+                WorkShiftDTO dto = new WorkShiftDTO();
+                dto.setId(r.getId());
+                // parse dayOfWeek to enum (case-insensitive)
+                if (r.getDayOfWeek() == null) throw new IllegalArgumentException("dayOfWeek is required");
+                dto.setDayOfWeek(com.sw3.barber_microservice.model.DayOfWeekEnum.valueOf(r.getDayOfWeek().toUpperCase()));
+                dto.setStartTime(java.time.LocalTime.parse(r.getStartTime(), tf));
+                dto.setEndTime(java.time.LocalTime.parse(r.getEndTime(), tf));
+                dto.setBarberId(r.getBarberId());
+
+                WorkShiftDTO out = workShiftService.save(dto, r.getBarberId());
+                if (out == null) {
+                    java.util.Map<String, Object> err = new java.util.HashMap<>();
+                    err.put("index", i);
+                    err.put("reason", "Validation failed or overlap");
+                    err.put("input", r);
+                    errors.add(err);
+                } else {
+                    saved.add(out);
+                }
+            } catch (Exception e) {
+                java.util.Map<String, Object> err = new java.util.HashMap<>();
+                err.put("index", i);
+                err.put("reason", e.getMessage());
+                err.put("input", r);
+                errors.add(err);
+            }
+        }
+
+        java.util.Map<String, Object> resp = new java.util.HashMap<>();
+        resp.put("saved", saved);
+        resp.put("errors", errors);
+        return ResponseEntity.ok(resp);
     }
     
 }
