@@ -13,7 +13,6 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/api/workshifts")
 public class WorkShiftController {
 
     private final WorkShiftService workShiftService;
@@ -21,8 +20,8 @@ public class WorkShiftController {
     public WorkShiftController(WorkShiftService workShiftService) {
         this.workShiftService = workShiftService;
     }
-
-    @GetMapping
+    
+    @GetMapping("/admin/workshifts")
     public ResponseEntity<List<WorkShiftDTO>> getAll() {
         List<WorkShiftDTO> workShifts = workShiftService.findAll();
         if (workShifts.isEmpty()) {
@@ -31,14 +30,16 @@ public class WorkShiftController {
         return ResponseEntity.ok(workShifts);
     }
 
-    @GetMapping("/{id}")
+    //6-Ver horario laboral barbero por Id
+    @GetMapping("/admin/workshifts/{id}")
     public ResponseEntity<WorkShiftDTO> getById(@PathVariable Long id) {
         return workShiftService.findById(id)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
     //Crea un horario de trabajo con los datos del WorkShiftDTO (incluyendo el ID del barbero asociado)
-    @PostMapping
+    /*
+    @PostMapping("/admin/workshifts")
     public ResponseEntity<WorkShiftDTO> create(@Valid @RequestBody WorkShiftDTO workShiftDto) {
         WorkShiftDTO saved = workShiftService.save(workShiftDto);
         if (saved != null) {
@@ -46,27 +47,24 @@ public class WorkShiftController {
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
+    }*/
+    //7- Asignarle un nuevo horario de trabajo a un barbero existente
+    @PutMapping("/admin/workshifts/{id}/horarios")
+    public ResponseEntity<WorkShiftDTO> update(@PathVariable String id, @RequestBody WorkShiftDTO workShiftDto) {
+        WorkShiftDTO updated = workShiftService.save(workShiftDto,id);
+        if (updated != null) {
+            return ResponseEntity.ok(updated);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<WorkShiftDTO> update(@PathVariable Long id, @RequestBody WorkShiftDTO workShiftDto) {
-        return workShiftService.findById(id)
-                .map(existing -> {
-                    // ensure DTO id matches path id
-                    workShiftDto.setId(id);
-                    WorkShiftDTO saved = workShiftService.save(workShiftDto);//save crea o actualiza
-                    return ResponseEntity.ok(saved);
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/admin/workshifts/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         workShiftService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/barberId/{id}")
+    @GetMapping("/admin/workshifts/{id}/horarios")
     public ResponseEntity<List<WorkShiftDTO>> getByBarberId(@PathVariable String id) {
         List<WorkShiftDTO> workShifts = workShiftService.findByBarberId(id);
         if (workShifts.isEmpty()) {

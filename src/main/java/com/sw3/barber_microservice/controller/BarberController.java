@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 
 @RestController
-//@RequestMapping("/api/barbers")
 public class BarberController {
     private static final Logger log = LoggerFactory.getLogger(BarberController.class);
     @Autowired
@@ -41,21 +40,20 @@ public class BarberController {
         this.barberService = barberService;
         this.serviceService = serviceService;
     }
-    //@GetMapping("/barberos/public/barbers")
-    @GetMapping
+    //Obtener todos los barberos
+    @GetMapping("/admin/barbers")
     public List<BarberDTO> getAll() {
         return barberService.findAll();
     }
-
-    @GetMapping("public/barbers/{id}")
+    //1. Obtener barbero por Id
+    @GetMapping("/public/barbers/{id}")
     public ResponseEntity<BarberDTO> getById(@PathVariable String id) {
         return barberService.findById(id)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    //Crea un barbero con los datos del BarberDTO (sin el horario de trabajo)
-    //@PostMapping
-    @PostMapping(path = "/admin/barber",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    //2- Crea un barbero con los datos del BarberDTO (sin el horario de trabajo)
+    @PostMapping (path = "/admin/barbers",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BarberDTO> create(
             @RequestPart("name") String name,
             @RequestPart(value = "lastName", required = false) String lastName,
@@ -99,8 +97,8 @@ public class BarberController {
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
-
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    //3- Actualizar datos barbero por Id
+    @PutMapping(value = "/admin/barbers/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BarberDTO> update(
             @PathVariable String id,
             @RequestPart("name") String name,
@@ -150,31 +148,41 @@ public class BarberController {
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-
-    @DeleteMapping("/{id}")
+    //Eliminar barbero por Id - No se utiliza
+    /*
+    //@DeleteMapping("barberos/admin/barbers/{id}")
+    @DeleteMapping("/barbers/delete/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         barberService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
-    @PostMapping("/{barberId}/services/{serviceId}")
+    */
+   /*
+    //Asignar un servicio a barbero - No se utiliza
+    @PostMapping("/admin/barbers/{barberId}/services/{serviceId}")
+    //@PostMapping("/{barberId}/services/{serviceId}")
     public ResponseEntity<ServiceDTO> assignService(@PathVariable String barberId, @PathVariable Long serviceId) {
         ServiceDTO dto = barberService.assignServiceToBarber(barberId, serviceId);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
-
-    @DeleteMapping("/{barberId}/services/{serviceId}")
+    */
+    /*
+    @DeleteMapping("admin/barbers/{barberId}/services/{serviceId}")
+    //@DeleteMapping("/{barberId}/services/{serviceId}")
     public ResponseEntity<Void> unassignService(@PathVariable String barberId, @PathVariable Long serviceId) {
         barberService.unassignServiceFromBarber(barberId, serviceId);
         return ResponseEntity.noContent().build();
-    }
+    }*/
 
-    @GetMapping("/{barberId}/services")
+    //4- Lista los servicios de un barbero por Id
+    @GetMapping("/admin/barbers/{barberId}/servicios")
+    //@GetMapping("/{barberId}/services")
     public ResponseEntity<List<ServiceDTO>> listServicesByBarber(@PathVariable String barberId) {
         List<ServiceDTO> services = barberService.getServicesByBarber(barberId);
         return ResponseEntity.ok(services);
     }
-
-    @PostMapping("/{id}/contract/deactivate")
+    //5- Desactiva el contrato de un barbero por Id
+    @DeleteMapping("/admin/barbers/{id}")
     public ResponseEntity<BarberDTO> deactivateContract(@PathVariable String id) {
         try {
             BarberDTO updated = barberService.setContractFalse(id);
@@ -183,8 +191,7 @@ public class BarberController {
             return ResponseEntity.notFound().build();
         }
     }
-
-    @PatchMapping("/{id}/availability")
+    @PatchMapping("/admin/barbers/{id}/availability")
     public ResponseEntity<BarberDTO> setAvailability(@PathVariable String id, @RequestParam boolean available) {
         try {
             BarberDTO updated = barberService.setAvailability(id, available);
@@ -193,14 +200,14 @@ public class BarberController {
             return ResponseEntity.notFound().build();
         }
     }
-
-    @PostMapping("/{barberId}/services/bulk")
+    //5- Asignar varios servicios a un barbero
+    @PostMapping("/admin/barbers/{barberId}/servicios")
     public ResponseEntity<List<ServiceDTO>> assignServicesBulk(@PathVariable String barberId, @RequestBody AssignServicesDTO dto) {
         List<ServiceDTO> assigned = barberService.assignServicesToBarber(barberId, dto.getServiceIds());
         return ResponseEntity.status(HttpStatus.CREATED).body(assigned);
     }
-
-    @GetMapping("/services")
+    //@GetMapping("barberos/public/services")
+    @GetMapping("/barbers/services")
     public ResponseEntity<List<ServiceDTO>> getServices() {
         List<ServiceDTO> services = serviceService.findAll();
         return ResponseEntity.ok(services);
